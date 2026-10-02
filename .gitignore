@@ -1,0 +1,12 @@
+.idea
+target
+.DS_Store
+backups/*
+!backups/.gitkeep
+keys/
+.worktrees/
+
+# local build / test artifacts
+test-ledger/
+rome-evm-audited-build/
+*.log

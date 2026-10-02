@@ -1,0 +1,48 @@
+[package]
+name = "emulator"
+version = "0.1.0"
+edition = "2021"
+license-file = "../LICENSE"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+testnet = ["rome-evm/testnet"]
+mainnet = ["rome-evm/mainnet"]
+ci = ["rome-evm/ci"]
+# No network feature is on by default: pick one of ci / testnet / mainnet.
+default = []
+
+[dependencies]
+rome-evm = {path = "../program", default-features = false, features = ["no-entrypoint"]}
+
+solana-program = { workspace = true }
+solana-client = { workspace = true }
+solana-account = { workspace = true }
+solana-system-interface = { workspace = true }
+spl-token-interface = { workspace = true }
+spl-token-2022-interface = { workspace = true }
+spl-associated-token-account-interface = { workspace = true }
+solana-sdk-ids = { workspace = true }
+solana-loader-v3-interface = { workspace = true }
+solana-bincode = { workspace = true }
+solana-svm-log-collector = { workspace = true }
+solana-get-sysvar = { workspace = true }
+# Pinned to the exact version spl-token-2022 11.0.0 resolves (its own
+# `solana-sysvar = "3.0.0"` pin) so this dependency edge unifies with that one
+# in the lockfile rather than adding a third solana-sysvar instance. spl-token
+# -2022's internal `Clock::get()`/`Rent::get()` (transfer-fee path) use THIS
+# crate's own `Sysvar` trait + independent `program_stubs` registry — a
+# separate mechanism from `solana_get_sysvar` (which only `solana-program`
+# 4.x's re-exported `Sysvar` trait routes through). See stubs.rs.
+solana-sysvar = "=3.1.1"
+
+mollusk = { path = "../../mollusk" }
+mollusk-svm = { workspace = true }
+mollusk-svm-result = { workspace = true }
+
+bincode = { workspace = true }
+
+[lib]
+name = "emulator"
+path = "src/lib.rs"

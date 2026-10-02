@@ -1,0 +1,85 @@
+[package]
+name = "rome-evm"
+version = "0.1.0"
+edition = "2021"
+license-file = "../LICENSE"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+# No network feature is on by default: pick exactly one of ci / testnet / mainnet
+# explicitly (e.g. `--features ci` for local builds and tests).
+default = ["custom-heap"]
+custom-panic = []
+custom-heap = []
+no-entrypoint = []
+testnet = []
+mainnet = []
+ci = []
+no-logs = []
+# Per-transaction diagnostic text logs (frame trace, per-diff commit lines,
+# InvokeSigned, allocate slots). OFF by default: measured 8.7k CU on a warm
+# SPL transfer and 43k on a warm UniswapV2 swap, and nothing off-chain reads
+# them. Turn on for a debugging build only.
+verbose-logs = []
+
+[dependencies]
+evm = { workspace = true }
+solana-program = { workspace = true }
+solana-system-interface = { workspace = true }
+solana-bn254 = { workspace = true }
+solana-bincode = { workspace = true }
+rlp = { workspace = true }
+thiserror = { workspace = true }
+hex = { workspace = true }
+borsh = { workspace = true }
+ripemd = { workspace = true }
+bytemuck = { workspace = true }
+macros = { path = "../macros" }
+
+spl-token = { workspace = true }
+spl-token-2022 = { workspace = true }
+spl-token-interface = { workspace = true }
+spl-token-2022-interface = { workspace = true }
+spl-associated-token-account-interface = { workspace = true }
+solana-sdk-ids = { workspace = true }
+solana-loader-v3-interface = { workspace = true }
+solana-ed25519-program = { workspace = true }
+solana-precompile-error = { workspace = true }
+solana-compute-budget-interface = { workspace = true, features = ["borsh"]}
+
+[target.'cfg(not(target_os = "solana"))'.dependencies]
+solana-client = { workspace = true }
+bincode = { workspace = true }
+solana-account = { workspace = true }
+ed25519-dalek = { workspace = true }
+mollusk = { path = "../../mollusk" }
+solana-get-sysvar = { workspace = true }
+# Pinned to the exact version spl-token-2022 11.0.0 resolves (its own
+# `solana-sysvar = "3.0.0"` pin) — see emulator/Cargo.toml for why this is a
+# second, deliberate solana-sysvar dependency edge. Needed by
+# program/tests/t22_differential.rs to install stubs into the SAME registry
+# the vendored spl-token-2022 processor's Clock::get()/Rent::get() actually
+# read from.
+solana-sysvar = "=3.1.1"
+
+[dev-dependencies]
+mollusk-svm = { workspace = true }
+# Read the `ci/dump` account JSON the CI validator loads, so the mint-profile
+# tests assert against real Token-2022 mints rather than byte-edits of one.
+# serde_json is already a build-dependency below; tests need it too.
+base64 = { workspace = true }
+serde_json = { workspace = true }
+
+[build-dependencies]
+compile-time = { workspace = true }
+serde_json = { workspace = true }
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))', 'cfg(feature, values("no-entrypoint"))'] }
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]

@@ -1,0 +1,64 @@
+[workspace]
+
+members = [
+    "emulator",
+    "macros",
+    "program",
+]
+
+resolver = "2"
+
+[workspace.dependencies]
+thiserror = "2.0.18"
+
+# solana
+solana-client = "=4.2.1"
+solana-program = { version = "=4.0.0", features = ["borsh"], default-features = false }
+solana-system-interface = { version = "2.0.0", features = ["bincode"] }
+solana-bn254 = { version = "=3.2.1" }
+solana-account = "=4.3.2"
+solana-bincode = "=3.1.0"
+solana-sdk-ids = "=3.1.0"
+solana-loader-v3-interface = { version = "=6.1.0", features = ["serde"] }
+solana-ed25519-program = "3.0.0"
+solana-precompile-error = "=3.0.0"
+solana-compute-budget-interface = "=3.0.0"
+solana-get-sysvar = "=1.0.0"
+ed25519-dalek = "=2.2.0"
+
+spl-token = { version = "=9.0.0", features = ["no-entrypoint"], git = "https://github.com/solana-program/token" }
+spl-token-interface = { version = "2.0.0" }
+spl-token-2022 = { version = "11.0.0", features = ["no-entrypoint"]}
+spl-token-2022-interface = { version = "3.1.1"}
+spl-associated-token-account-interface = {version = "2.0.0", features = ["borsh"]}
+mollusk-svm = { version = "=0.15.0"}
+mollusk-svm-result = { version = "=0.15.0"}
+solana-svm-log-collector = "=4.2.1"
+
+hex = "0.4.3"
+rlp = { version = "0.5.2", features = ["derive"] }
+bincode = { version = "2", features = ["serde"] }
+ripemd = "0.1"
+borsh = { version = "1.6.1", features = ["derive", "unstable__schema"] }
+bytemuck = "1.24"
+
+# evm
+evm = { git = "https://github.com/rome-protocol/evm.git", branch = "master"}
+
+# macro
+quote = { version = "1.0.41" }
+syn = { version = "2.0.107" }
+
+compile-time = { version = "0.2.0" }
+
+serde_json = { version = "1.0" }
+base64 = { version = "0.22" }
+
+# Host-only: restores GetSysvar for off-chain builds (the Rome EVM emulator) on the
+# Agave 4.x crate line, where upstream solana-get-sysvar fails closed with
+# UnsupportedSysvar off-chain. The target_os = "solana" branch is byte-for-byte
+# upstream — on-chain program behavior is unaffected. See
+# https://github.com/rome-protocol/solana-get-sysvar
+[patch.crates-io.solana-get-sysvar]
+git = "https://github.com/rome-protocol/solana-get-sysvar"
+branch = "host-sysvar-registry"

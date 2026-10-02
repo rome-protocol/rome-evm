@@ -1,0 +1,9 @@
+# Vendored deployed-program snapshots that t22_differential measures against.
+# Fetched from Solana devnet 2026-07-24 (the cluster Rome devnet + testnet both settle to).
+#
+# name        program_id                                     sha256 (base58, solana_program::hash)
+# Update via scripts/sync-elf-fixtures.sh — never by hand.
+
+token2022    TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb  22HmJCzZdogSWrYA2tiz1cnKZjDyiQEA6aXkZb52DZoY
+tokenkeg     TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA  9imgRGh8bS5gZEyPpSkFDUVcXnLu3fcahVQSHH7XJpte
+ata          ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL 813EWTkxCKAXRr9tMYarvpPid33bf4fz7djjadGyJvfv
