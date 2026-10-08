@@ -332,6 +332,23 @@ impl<'a> State<'a> {
             return Ok(Some(bind))
         }
 
+        // The Instructions sysvar is not a stored account: the runtime builds it
+        // per transaction, so the RPC client has nothing to return for it.
+        // Without this, a CPI target that lists it (klend deposit/redeem, any
+        // program that inspects its caller) sees a system-owned empty account
+        // and fails with InvalidAccountOwner. Approximation: one top-level
+        // instruction to this program at index 0 (program id only — the real tx
+        // has the Rome ix's accounts/data and may carry other top-level ixs).
+        // Faithful for checks on the outermost program id. The ed25519 path
+        // inserts its own sysvar in `new_ed25519` and returns from the cache above.
+        if *key == sysvar::instructions::ID {
+            let rome_ix = Instruction::new_with_bytes(*self.program_id, &[], vec![]);
+            let (_, mut acc) = compose_sysvar(vec![&rome_ix]);
+            acc.writable = writable;
+            self.insert((*key, acc), address);
+            return self.load(key, address, writable)
+        }
+
         self
             .client
             .get_account(key)?
@@ -725,5 +742,50 @@ mod tests {
         }
     }
 
+    /// Answers nothing: the Instructions sysvar is never a stored account, so a
+    /// real RPC client returns None for it too.
+    struct EmptyStorage;
 
+    impl AccountStorage for EmptyStorage {
+        fn get_account(&self, _key: &Pubkey) -> Result<Option<solana_account::Account>> {
+            Ok(None)
+        }
+        fn get_multiple_accounts(&self, keys: &[Pubkey]) -> Result<Vec<Option<solana_account::Account>>> {
+            keys.iter().map(|k| self.get_account(k)).collect()
+        }
+    }
+
+    /// A CPI target that lists the Instructions sysvar (klend deposit/redeem)
+    /// must see a sysvar-owned account describing the outer Rome instruction,
+    /// not a system-owned placeholder (InvalidAccountOwner in mollusk).
+    #[test]
+    fn instructions_sysvar_is_composed_when_absent_from_client() {
+        let program_id = Pubkey::new_unique();
+        let storage: Arc<dyn AccountStorage> = Arc::new(EmptyStorage);
+        let state = State::new_unchecked(&program_id, None, storage, 1).unwrap();
+
+        let (key, mut acc) = state.info_external(&sysvar::instructions::ID, false).unwrap();
+        assert_eq!(acc.owner, sysvar::id());
+
+        let mut lamports = acc.lamports;
+        let info = solana_program::account_info::AccountInfo::new(
+            &key, false, false, &mut lamports, &mut acc.data, &acc.owner, false,
+        );
+        let ix = sysvar::instructions::load_instruction_at_checked(0, &info).unwrap();
+        assert_eq!(ix.program_id, program_id);
+        assert_eq!(sysvar::instructions::load_current_index_checked(&info).unwrap(), 0);
+    }
+
+    /// A second load (writable or not) hits the cache and must not re-insert.
+    #[test]
+    fn instructions_sysvar_reload_is_cached() {
+        let program_id = Pubkey::new_unique();
+        let storage: Arc<dyn AccountStorage> = Arc::new(EmptyStorage);
+        let state = State::new_unchecked(&program_id, None, storage, 1).unwrap();
+
+        let (_, first) = state.info_external(&sysvar::instructions::ID, false).unwrap();
+        let (_, second) = state.info_external(&sysvar::instructions::ID, true).unwrap();
+        assert_eq!(first.data, second.data);
+        assert_eq!(second.owner, sysvar::id());
+    }
 }
